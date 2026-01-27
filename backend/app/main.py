@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 import uuid
 import os
@@ -10,6 +10,20 @@ load_dotenv()
 
 app = FastAPI()
 
+def run_processing(job_id: str, temp_path: str):
+    try:
+        set_status(job_id, "transcribing")
+        clips = rank_clips(temp_path)
+
+        set_status(job_id, "completed")
+        set_results(job_id, clips)
+    except Exception as e:
+        set_status(job_id, "failed")
+        print(e)
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -18,29 +32,21 @@ app.add_middleware(
 )
 
 @app.post("/process")
-async def process_video(file: UploadFile = File(...)):
+async def process_video(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...)
+):
     job_id = str(uuid.uuid4())
-    jobs[job_id] = {"status": "processing"}
+    jobs[job_id] = {
+        "status": "processing",
+        "results": []
+    }
 
-    # Save uploaded file to disk
     temp_path = f"temp_{job_id}.mp4"
-    print(f"[DEBUG] Starting processing for job_id={job_id}, saving to {temp_path}")
     with open(temp_path, "wb") as f:
-        content = await file.read()
-        f.write(content)
+        f.write(await file.read())
 
-    set_status(job_id, "transcribing")
-    print(f"[DEBUG] Transcribing video: {temp_path}")
-    clips = rank_clips(temp_path)
-
-    set_results(job_id, clips)
-    print(f"[DEBUG] Processing complete for job_id={job_id}")
-
-    # Delete the temp file after processing
-    try:
-        os.remove(temp_path)
-    except Exception as e:
-        print(f"Warning: could not delete temp file {temp_path}: {e}")
+    background_tasks.add_task(run_processing, job_id, temp_path)
 
     return {"job_id": job_id}
 

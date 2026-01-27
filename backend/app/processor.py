@@ -20,7 +20,20 @@ def rank_clips(video_path):
             "reason": "High speech density and key phrases detected"
         })
 
-    top = sorted(candidates, key=lambda x: x["score"], reverse=True)[:3]
+    # Sort by score descending
+    sorted_candidates = sorted(candidates, key=lambda x: x["score"], reverse=True)
+
+    # Select top 3 non-overlapping clips
+    selected = []
+    for c in sorted_candidates:
+        overlap = any(
+            not (c["end"] <= s["start"] or c["start"] >= s["end"])
+            for s in selected
+        )
+        if not overlap:
+            selected.append(c)
+        if len(selected) == 3:
+            break
 
     return [
         {
@@ -28,5 +41,5 @@ def rank_clips(video_path):
             "end": round(c["end"], 1),
             "reason": c["reason"]
         }
-        for c in top
+        for c in selected
     ]

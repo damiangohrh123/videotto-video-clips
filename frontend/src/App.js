@@ -4,7 +4,6 @@ import React, { useState, useRef, useEffect } from "react";
 function VideoClipPlayer({ start, end, src }) {
   const videoRef = useRef();
 
-
   // Robustly seek to start time when loaded or when play is pressed
   useEffect(() => {
     const video = videoRef.current;
@@ -59,7 +58,7 @@ function VideoClipPlayer({ start, end, src }) {
   };
 
   return (
-    <div style={{ marginTop: 8 }}>
+    <div className="video-clip-player">
       <video
         ref={videoRef}
         width={320}
@@ -69,7 +68,7 @@ function VideoClipPlayer({ start, end, src }) {
         onSeeking={handleSeeking}
         preload="metadata"
       />
-      <div style={{ fontSize: '0.9em', color: '#555' }}>
+      <div className="video-clip-player-info">
         Clip duration: {formatTime(end - start)}
       </div>
     </div>
@@ -79,6 +78,13 @@ function VideoClipPlayer({ start, end, src }) {
 function App() {
   const [status, setStatus] = useState("Not started");
   // jobId state removed (was unused)
+
+  // Format seconds as mm:ss
+  const formatTime = (s) => {
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${sec.toString().padStart(2, '0')}`;
+  };
   const [results, setResults] = useState([]);
   const [polling, setPolling] = useState(false);
   const [videoFile, setVideoFile] = useState(null);
@@ -168,45 +174,38 @@ function App() {
   };
 
   return (
-    <div style={{ padding: "20px", fontFamily: "sans-serif" }}>
+    <div className="app-container">
       <h1>Videotto Clip Ranking</h1>
 
       <div
+        className="drop-area"
         onDrop={handleDrop}
         onDragOver={handleDragOver}
-        style={{
-          border: "2px dashed #aaa",
-          borderRadius: 8,
-          padding: 20,
-          marginBottom: 16,
-          background: "#fafafa",
-          textAlign: "center",
-        }}
       >
         <input
           type="file"
           accept="video/*"
-          style={{ display: "none" }}
+          className="hidden-input"
           id="video-upload"
           onChange={handleFileChange}
         />
-        <label htmlFor="video-upload" style={{ cursor: "pointer" }}>
+        <label htmlFor="video-upload" className="upload-label">
           <b>Drag & drop a video here, or click to select</b>
         </label>
       </div>
 
-      <button onClick={handleProcess} disabled={polling || !videoUrl}>
+      <button className="process-btn" onClick={handleProcess} disabled={polling || !videoUrl}>
         Process Video
       </button>
 
-      <p>{status}</p>
+      <p className="status-text">{status}</p>
 
-      <ul>
+      <ul className="clip-list">
         {results.length > 0 ? (
           results.map((clip, idx) => (
-            <li key={idx} style={{ marginBottom: '30px' }}>
-              <b>Clip {idx + 1}:</b> {clip.start} - {clip.end} <br />
-              <i>{clip.reason}</i>
+            <li key={idx} className="clip-list-item">
+              <b>Clip {idx + 1}:</b> {formatTime(clip.start)} - {formatTime(clip.end)} <br />
+              <i>{clip.reason.replace(/^This segment/i, "This clip")}</i>
               <br />
               <VideoClipPlayer start={clip.start} end={clip.end} src={videoUrl} />
             </li>

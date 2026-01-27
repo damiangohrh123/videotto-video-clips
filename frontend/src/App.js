@@ -76,7 +76,7 @@ function VideoClipPlayer({ start, end, src }) {
 }
 
 function App() {
-  const [status, setStatus] = useState("Not started");
+  const [status, setStatus] = useState("");
   // jobId state removed (was unused)
 
   // Format seconds as mm:ss
@@ -125,7 +125,7 @@ function App() {
       });
       const data = await res.json();
       if (data.job_id) {
-        setStatus("Processing started (Job: " + data.job_id + ")");
+        setStatus("processing");
         setPolling(true);
         pollStatus(data.job_id);
       } else {
@@ -142,7 +142,7 @@ function App() {
       try {
         const res = await fetch(`http://localhost:8000/status/${jobId}`);
         const data = await res.json();
-        setStatus(`Status: ${data.status}`);
+        setStatus(data.status);
         if (data.status === "completed") {
           done = true;
           setPolling(false);
@@ -150,7 +150,7 @@ function App() {
         } else if (data.status === "failed") {
           done = true;
           setPolling(false);
-          setStatus("Processing failed");
+          setStatus("failed");
         } else {
           await new Promise((resolve) => setTimeout(resolve, 1500));
         }
@@ -198,10 +198,15 @@ function App() {
         Process Video
       </button>
 
-      <p className="status-text">{status}</p>
+      {status && (
+        <p className="status-text">
+          {status === "processing" && <span className="spinner" />}
+          {status.charAt(0).toUpperCase() + status.slice(1)}
+        </p>
+      )}
 
       <ul className="clip-list">
-        {results.length > 0 ? (
+        {results.length > 0 &&
           results.map((clip, idx) => (
             <li key={idx} className="clip-list-item">
               <b>Clip {idx + 1}:</b> {formatTime(clip.start)} - {formatTime(clip.end)} <br />
@@ -210,9 +215,7 @@ function App() {
               <VideoClipPlayer start={clip.start} end={clip.end} src={videoUrl} />
             </li>
           ))
-        ) : (
-          <li>No results yet.</li>
-        )}
+        }
       </ul>
     </div>
   );

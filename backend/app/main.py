@@ -12,7 +12,7 @@ app = FastAPI()
 
 def run_processing(job_id: str, temp_path: str):
     try:
-        set_status(job_id, "transcribing")
+        set_status(job_id, "processing")
         clips = rank_clips(temp_path)
 
         set_status(job_id, "completed")

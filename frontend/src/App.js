@@ -4,17 +4,31 @@ import React, { useState, useRef, useEffect } from "react";
 function VideoClipPlayer({ start, end, src }) {
   const videoRef = useRef();
 
-  // Seek to start time when loaded
+
+  // Robustly seek to start time when loaded or when play is pressed
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     const handleLoaded = () => {
-      video.currentTime = start;
+      // Only seek if not already at start
+      if (Math.abs(video.currentTime - start) > 0.1) {
+        video.currentTime = start;
+      }
+    };
+    const handlePlay = () => {
+      // Always seek to start when play is pressed and before playing
+      if (Math.abs(video.currentTime - start) > 0.1) {
+        video.currentTime = start;
+      }
     };
 
     video.addEventListener("loadedmetadata", handleLoaded);
-    return () => video.removeEventListener("loadedmetadata", handleLoaded);
+    video.addEventListener("play", handlePlay);
+    return () => {
+      video.removeEventListener("loadedmetadata", handleLoaded);
+      video.removeEventListener("play", handlePlay);
+    };
   }, [start, end, src]);
 
   // Prevent seeking outside the clip

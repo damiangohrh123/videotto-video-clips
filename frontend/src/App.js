@@ -69,20 +69,51 @@ function App() {
   const [jobId, setJobId] = useState(null);
   const [results, setResults] = useState([]);
   const [polling, setPolling] = useState(false);
+  const [videoFile, setVideoFile] = useState(null);
+  const [videoUrl, setVideoUrl] = useState("/sample.mp4");
+
+  // Handle file drop or selection
+  const handleFileChange = (e) => {
+    const file = e.target.files ? e.target.files[0] : e.dataTransfer.files[0];
+    if (file && file.type.startsWith("video/")) {
+      setVideoFile(file);
+      setVideoUrl(URL.createObjectURL(file));
+      setStatus("Video loaded: " + file.name);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    handleFileChange(e);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
 
   const handleProcess = async () => {
     setStatus("Processing...");
     setResults([]);
+    if (!videoFile) {
+      setStatus("No video file selected");
+      return;
+    }
     try {
+      const formData = new FormData();
+      formData.append("file", videoFile);
       const res = await fetch("http://localhost:8000/process", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        body: formData,
       });
       const data = await res.json();
-      setJobId(data.job_id);
-      setStatus("Processing started (Job: " + data.job_id + ")");
-      setPolling(true);
-      pollStatus(data.job_id);
+      if (data.job_id) {
+        setJobId(data.job_id);
+        setStatus("Processing started (Job: " + data.job_id + ")");
+        setPolling(true);
+        pollStatus(data.job_id);
+      } else {
+        setStatus("Failed to get job ID");
+      }
     } catch (err) {
       setStatus("Failed to start processing");
     }
@@ -129,7 +160,31 @@ function App() {
     <div style={{ padding: "20px", fontFamily: "sans-serif" }}>
       <h1>Videotto Clip Ranking</h1>
 
-      <button onClick={handleProcess} disabled={polling}>
+      <div
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        style={{
+          border: "2px dashed #aaa",
+          borderRadius: 8,
+          padding: 20,
+          marginBottom: 16,
+          background: "#fafafa",
+          textAlign: "center",
+        }}
+      >
+        <input
+          type="file"
+          accept="video/*"
+          style={{ display: "none" }}
+          id="video-upload"
+          onChange={handleFileChange}
+        />
+        <label htmlFor="video-upload" style={{ cursor: "pointer" }}>
+          <b>Drag & drop a video here, or click to select</b>
+        </label>
+      </div>
+
+      <button onClick={handleProcess} disabled={polling || !videoUrl}>
         Process Video
       </button>
 
@@ -138,11 +193,11 @@ function App() {
       <ul>
         {results.length > 0 ? (
           results.map((clip, idx) => (
-            <li key={idx} style={{ marginBottom: "30px" }}>
+            <li key={idx} style={{ marginBottom: '30px' }}>
               <b>Clip {idx + 1}:</b> {clip.start} - {clip.end} <br />
               <i>{clip.reason}</i>
               <br />
-              <VideoClipPlayer start={clip.start} end={clip.end} src={"/sample.mp4"} />
+              <VideoClipPlayer start={clip.start} end={clip.end} src={videoUrl} />
             </li>
           ))
         ) : (

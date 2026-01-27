@@ -3,7 +3,6 @@ import React, { useState, useRef, useEffect } from "react";
 // VideoClipPlayer component: plays only the segment between start and end
 function VideoClipPlayer({ start, end, src }) {
   const videoRef = useRef();
-  const [duration, setDuration] = useState(0);
 
   // Seek to start time when loaded
   useEffect(() => {
@@ -12,7 +11,6 @@ function VideoClipPlayer({ start, end, src }) {
 
     const handleLoaded = () => {
       video.currentTime = start;
-      setDuration(end - start);
     };
 
     video.addEventListener("loadedmetadata", handleLoaded);
@@ -66,7 +64,7 @@ function VideoClipPlayer({ start, end, src }) {
 
 function App() {
   const [status, setStatus] = useState("Not started");
-  const [jobId, setJobId] = useState(null);
+  // jobId state removed (was unused)
   const [results, setResults] = useState([]);
   const [polling, setPolling] = useState(false);
   const [videoFile, setVideoFile] = useState(null);
@@ -107,7 +105,6 @@ function App() {
       });
       const data = await res.json();
       if (data.job_id) {
-        setJobId(data.job_id);
         setStatus("Processing started (Job: " + data.job_id + ")");
         setPolling(true);
         pollStatus(data.job_id);

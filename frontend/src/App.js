@@ -119,7 +119,7 @@ function App() {
     try {
       const formData = new FormData();
       formData.append("file", videoFile);
-      const res = await fetch("http://15.134.231.44:8000/process", {
+      const res = await fetch("/api/proxy/process", {
         method: "POST",
         body: formData,
       });
@@ -140,7 +140,7 @@ function App() {
     let done = false;
     while (!done) {
       try {
-        const res = await fetch(`http://15.134.231.44:8000/status/${jobId}`);
+        const res = await fetch(`/api/proxy/status/${jobId}`);
         const data = await res.json();
         setStatus(data.status);
         if (data.status === "completed") {
@@ -164,7 +164,7 @@ function App() {
 
   const fetchResults = async (jobId) => {
     try {
-      const res = await fetch(`http://15.134.231.44:8000/results/${jobId}`);
+      const res = await fetch(`/api/proxy/results/${jobId}`);
       const data = await res.json();
       setResults(data.results || []);
       setStatus("Completed");

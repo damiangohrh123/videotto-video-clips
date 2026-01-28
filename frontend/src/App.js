@@ -119,7 +119,7 @@ function App() {
     try {
       const formData = new FormData();
       formData.append("file", videoFile);
-      const res = await fetch("http://localhost:8000/process", {
+      const res = await fetch("https://videotto-video-clips.onrender.com/process", {
         method: "POST",
         body: formData,
       });
@@ -140,7 +140,7 @@ function App() {
     let done = false;
     while (!done) {
       try {
-        const res = await fetch(`http://localhost:8000/status/${jobId}`);
+        const res = await fetch(`https://videotto-video-clips.onrender.com/status/${jobId}`);
         const data = await res.json();
         setStatus(data.status);
         if (data.status === "completed") {
@@ -164,7 +164,7 @@ function App() {
 
   const fetchResults = async (jobId) => {
     try {
-      const res = await fetch(`http://localhost:8000/results/${jobId}`);
+      const res = await fetch(`https://videotto-video-clips.onrender.com/results/${jobId}`);
       const data = await res.json();
       setResults(data.results || []);
       setStatus("Completed");

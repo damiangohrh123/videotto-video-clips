@@ -7,8 +7,7 @@ export const config = {
 export default async function handler(req, res) {
   const backendBase = "http://15.134.231.44:8000";
 
-  // Extract path segments after /api/proxy
-  const { path = [] } = req.query;
+  const path = req.query.path || [];
   const backendUrl = `${backendBase}/${path.join("/")}`;
 
   const headers = { ...req.headers };

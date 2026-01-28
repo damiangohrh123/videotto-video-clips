@@ -1,3 +1,20 @@
+/* Spinner for transcribing status */
+.spinner {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border: 3px solid #b3e6fa;
+  border-top: 3px solid #21a1f3;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 /* App Container */
 .app-container {
   padding: 24px;
@@ -137,22 +154,4 @@ code {
   to {
     transform: rotate(360deg);
   }
-}
-
-/* Spinner for transcribing status */
-.spinner {
-  display: inline-block;
-  width: 24px;
-  height: 24px;
-  border: 3px solid #b3e6fa;
-  border-top: 3px solid #21a1f3;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  vertical-align: middle;
-  margin-right: 8px;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 }

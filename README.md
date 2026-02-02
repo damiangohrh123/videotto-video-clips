@@ -1,7 +1,29 @@
 # Videotto — AI Video Clip Ranking
+## Disclaimer
+> ⚠️ The live web app is currently unavailable because the AWS backend instance has been turned off to save costs.  
+> The source code is fully functional and can be run locally or on your own cloud instance.
+
 ## Overview
 This project is a web app that automatically identifies and ranks the top 3 most interesting or shareable moments from long-form videos such as podcasts or interviews.
 It prioritizes semantic relevance and narrative coherence over simple signal-based heuristics.
+
+## How to Use?
+**1. Upload a video**  
+- Drag and drop your video file (MP4) into the upload area.
+- Click Process Video to start.
+- A progress indicator shows upload and processing status.  
+
+![Upload and Processing Screen](frontend/public/images/screenshot1.png)
+
+**2. Results & Clip Ranking Screen**
+- After processing, the app displays the top 3 clips.
+- Each clip shows start/end times, a preview, and why it was selected.
+
+![Results and Clip Ranking Screen](frontend/public/images/screenshot2.png)
+
+**3. Play Clips**
+- Click the play button to watch the clipped video segment.
+- The player prevents skipping outside the clip boundaries.
 
 ## How it Works
 **1. Audio Extraction**  
@@ -47,7 +69,7 @@ The chosen approach is semantic, transcript-based ranking. This approach uses la
 ```
 
 ### Tradeoffs of the Chosen Approach
-- Slower than pure signal-based methods (around 1.5 minutes to process a 24 minute video)
+- Slower than pure signal-based methods (approximately 3.5 minutes to process a 24 minute video)
 - Subjective outputs (inherent to content curation)
 
 These tradeoffs were accepted to prioritize clip quality over raw speed.

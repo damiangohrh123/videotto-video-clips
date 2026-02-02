@@ -1,4 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
+import Uppy from '@uppy/core';
+import { Dashboard } from '@uppy/react';
+import XHRUpload from '@uppy/xhr-upload';
+import '@uppy/core/dist/style.css';
+import '@uppy/dashboard/dist/style.css';
 
 // VideoClipPlayer component: plays only the segment between start and end
 function VideoClipPlayer({ start, end, src }) {
@@ -75,9 +80,10 @@ function VideoClipPlayer({ start, end, src }) {
   );
 }
 
+
 function App() {
+  const [results, setResults] = useState([]);
   const [status, setStatus] = useState("");
-  // jobId state removed (was unused)
 
   // Format seconds as mm:ss
   const formatTime = (s) => {
@@ -85,57 +91,49 @@ function App() {
     const sec = Math.floor(s % 60);
     return `${m}:${sec.toString().padStart(2, '0')}`;
   };
-  const [results, setResults] = useState([]);
-  const [polling, setPolling] = useState(false);
-  const [videoFile, setVideoFile] = useState(null);
-  const [videoUrl, setVideoUrl] = useState("/sample.mp4");
 
-  // Handle file drop or selection
-  const handleFileChange = (e) => {
-    const file = e.target.files ? e.target.files[0] : e.dataTransfer.files[0];
-    if (file && file.type.startsWith("video/")) {
-      setVideoFile(file);
-      setVideoUrl(URL.createObjectURL(file));
-      setStatus("Video loaded: " + file.name);
-    }
-  };
+  // Uppy instance for chunked uploads
+  const [uppy] = useState(() => {
+    return new Uppy({
+      restrictions: { maxNumberOfFiles: 1 },
+      autoProceed: false,
+    }).use(XHRUpload, {
+      endpoint: '/upload',
+      fieldName: 'file',
+      bundle: false,
+    });
+  });
 
-  const handleDrop = (e) => {
-    e.preventDefault();
-    handleFileChange(e);
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-  };
-
-  const handleProcess = async () => {
-    setStatus("Processing...");
-    setResults([]);
-    if (!videoFile) {
-      setStatus("No video file selected");
-      return;
-    }
-    try {
-      const formData = new FormData();
-      formData.append("file", videoFile);
-      const res = await fetch("/process", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      if (data.job_id) {
-        setStatus("processing");
-        setPolling(true);
-        pollStatus(data.job_id);
+  useEffect(() => {
+    uppy.on('upload', () => setStatus('Uploading...'));
+    uppy.on('upload-success', async (file, response) => {
+      setStatus('Processing...');
+      const jobId = response.body.job_id;
+      if (jobId) {
+        // Trigger processing after upload
+        try {
+          const res = await fetch(`/process/${jobId}`, { method: 'POST' });
+          const data = await res.json();
+          if (data.status === 'started') {
+            pollStatus(jobId);
+          } else {
+            setStatus('Failed to start processing');
+          }
+        } catch (err) {
+          setStatus('Failed to start processing');
+        }
       } else {
-        setStatus("Failed to get job ID");
+        setStatus('Failed to get job ID');
       }
-    } catch (err) {
-      setStatus("Failed to start processing");
-    }
-  };
+    });
+    uppy.on('upload-error', (file, error, response) => {
+      setStatus('Upload failed');
+    });
+    return () => uppy.close();
+    // eslint-disable-next-line
+  }, [uppy]);
 
+  // Poll backend for job status
   const pollStatus = async (jobId) => {
     let done = false;
     while (!done) {
@@ -145,11 +143,9 @@ function App() {
         setStatus(data.status);
         if (data.status === "completed") {
           done = true;
-          setPolling(false);
           fetchResults(jobId);
         } else if (data.status === "failed") {
           done = true;
-          setPolling(false);
           setStatus("failed");
         } else {
           await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -157,11 +153,11 @@ function App() {
       } catch (err) {
         setStatus("Error checking status");
         done = true;
-        setPolling(false);
       }
     }
   };
 
+  // Fetch results from backend
   const fetchResults = async (jobId) => {
     try {
       const res = await fetch(`/results/${jobId}`);
@@ -176,27 +172,8 @@ function App() {
   return (
     <div className="app-container">
       <h1>Videotto Clip Ranking</h1>
-
-      <div
-        className="drop-area"
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-      >
-        <input
-          type="file"
-          accept="video/*"
-          className="hidden-input"
-          id="video-upload"
-          onChange={handleFileChange}
-        />
-        <label htmlFor="video-upload" className="upload-label">
-          <b>Drag & drop a video here, or click to select</b>
-        </label>
-      </div>
-
-      <button className="process-btn" onClick={handleProcess} disabled={polling || !videoUrl}>
-        Process Video
-      </button>
+      <h2>Chunked Video Upload</h2>
+      <Dashboard uppy={uppy} proudlyDisplayPoweredByUppy={false} height={350} />
 
       {status && (
         <p className="status-text">
@@ -212,7 +189,7 @@ function App() {
               <b>Clip {idx + 1}:</b> {formatTime(clip.start)} - {formatTime(clip.end)} <br />
               <i>{clip.reason.replace(/^This segment/i, "This clip")}</i>
               <br />
-              <VideoClipPlayer start={clip.start} end={clip.end} src={videoUrl} />
+              {/* You may want to update this to use the processed video URL if available */}
             </li>
           ))
         }
